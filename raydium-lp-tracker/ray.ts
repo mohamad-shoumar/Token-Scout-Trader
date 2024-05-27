@@ -1,6 +1,6 @@
 import { Connection, PublicKey } from '@solana/web3.js';
-import { exec } from 'child_process';
-import { query } from './db'; 
+import { query } from './db';
+
 const RAYDIUM_PUBLIC_KEY = "675kPX9MHTjS2zt1qfr1NYHuzeLXfQM9H24wFSUt1Mp8";
 const HTTP_URL = "https://cold-black-emerald.solana-mainnet.quiknode.pro/c9c629561d539d4c32759e3280b24aea3135eac9/";
 const WSS_URL = "wss://cold-black-emerald.solana-mainnet.quiknode.pro/c9c629561d539d4c32759e3280b24aea3135eac9/";
@@ -70,25 +70,25 @@ async function fetchRaydiumMints(txId: string, connection: Connection) {
 async function storeTokensInDB(tokenAddresses: string[]) {
     const SOLANA_ADDRESS = "So11111111111111111111111111111111111111112";
     try {
+        const checkTokenExistsQuery = 'SELECT COUNT(*) FROM tokens WHERE token_address = $1';
         const insertTokenQuery = 'INSERT INTO tokens (token_symbol, token_address) VALUES ($1, $2) RETURNING *';
+        
         for (const address of tokenAddresses) {
-            if (address !== SOLANA_ADDRESS){ 
-                const result = await query(insertTokenQuery, ['Unknown', address]);
+            if (address !== SOLANA_ADDRESS) { 
+                const result = await query(checkTokenExistsQuery, [address]);
                 const count = parseInt(result.rows[0].count, 10);
-                if (count === 0 ){
-                    const insertResult = await query(insertTokenQuery, ['Unknown', address])
-                }
-                else{
-                    console.log('token already exits in the db');
+
+                if (count === 0) { 
+                    const insertResult = await query(insertTokenQuery, ['Unknown', address]);
+                    console.log(`Inserted token into DB: ${insertResult.rows[0].token_address}`);
+                } else {
+                    console.log(`Token already exists in the database: ${address}`);
                 }
             }
-            
         }
     } catch (error) {
         console.error('Error storing tokens in the database:', error);
     }
 }
 
-
-
-startConnection(connection, RAYDIUM, INSTRUCTION_NAME).catch(console.error);
+export { startConnection, connection, RAYDIUM, INSTRUCTION_NAME };
