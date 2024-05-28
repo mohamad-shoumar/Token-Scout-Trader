@@ -59,7 +59,7 @@ async function fetchRaydiumMints(txId: string, connection: Connection) {
         console.table(displayData);
 
         const tokenAddresses = [tokenAAccount.toBase58(), tokenBAccount.toBase58()];
-        await storeTokensInDB(tokenAddresses); // Store tokens in the database
+        await storeTokensInDB(tokenAddresses); 
     
     } catch (error) {
         console.log("Error fetching transaction:", txId, error);
@@ -71,7 +71,7 @@ async function storeTokensInDB(tokenAddresses: string[]) {
     const SOLANA_ADDRESS = "So11111111111111111111111111111111111111112";
     try {
         const checkTokenExistsQuery = 'SELECT COUNT(*) FROM tokens WHERE token_address = $1';
-        const insertTokenQuery = 'INSERT INTO tokens (token_symbol, token_address) VALUES ($1, $2) RETURNING *';
+        const insertTokenQuery = 'INSERT INTO tokens (token_address) VALUES ($1) RETURNING *';
         
         for (const address of tokenAddresses) {
             if (address !== SOLANA_ADDRESS) { 
@@ -79,7 +79,7 @@ async function storeTokensInDB(tokenAddresses: string[]) {
                 const count = parseInt(result.rows[0].count, 10);
 
                 if (count === 0) { 
-                    const insertResult = await query(insertTokenQuery, ['Unknown', address]);
+                    const insertResult = await query(insertTokenQuery, [address]);
                     console.log(`Inserted token into DB: ${insertResult.rows[0].token_address}`);
                 } else {
                     console.log(`Token already exists in the database: ${address}`);
