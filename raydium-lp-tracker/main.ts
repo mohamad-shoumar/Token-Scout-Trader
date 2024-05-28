@@ -1,6 +1,8 @@
-import { query } from './db'; 
+import { query, close as closeDbConnection } from './db'; 
 import axios from 'axios';
 import { startConnection, connection, RAYDIUM, INSTRUCTION_NAME } from './ray';
+
+let intervalId: NodeJS.Timeout;
 
 // Function to fetch the most recently added tokens from the database
 async function fetchRecentTokens(limit: number = 30) {
@@ -119,12 +121,20 @@ async function saveFinancialMetrics(pair: any) {
     }
 }
 
+// Function to shut down the application
+async function gracefulShutdown() {
+    clearInterval(intervalId);
+    await closeDbConnection(); 
+    console.log('Shutdown complete.');
+    process.exit(0); 
+}
+
 async function main() {
     await startConnection(connection, RAYDIUM, INSTRUCTION_NAME);
 
     const interval = 10000; 
 
-    setInterval(async () => {
+    intervalId = setInterval(async () => {
         const recentTokens = await fetchRecentTokens();
         if (recentTokens.length === 0) {
             console.log('No recent tokens found.');
@@ -137,3 +147,6 @@ async function main() {
 }
 
 main().catch(console.error);
+
+process.on('SIGINT', gracefulShutdown);
+process.on('SIGTERM', gracefulShutdown);
