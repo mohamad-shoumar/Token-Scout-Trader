@@ -11,7 +11,9 @@
   "license": "ISC",
   "dependencies": {
     "@solana/web3.js": "^1.91.8",
+    "@types/dotenv": "^8.2.0",
     "axios": "^1.7.2",
+    "dotenv": "^16.4.5",
     "pg": "^8.11.5"
   },
   "devDependencies": {
