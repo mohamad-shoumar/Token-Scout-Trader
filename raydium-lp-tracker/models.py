@@ -2,15 +2,27 @@ import psycopg2
 from psycopg2 import Error
 from database import connect_to_database
 
-# Tokens Table
+def drop_tables(connection):
+    cursor = connection.cursor()
+    drop_query = """
+    DROP TABLE IF EXISTS financial_metrics, static_info, tokens, good_tokens;
+    """
+    try:
+        cursor.execute(drop_query)
+        connection.commit()
+        print("Tables dropped successfully")
+    except Error as e:
+        print(f"The error '{e}' occurred")
+    finally:
+        cursor.close()
+
 def create_tokens_table(connection):
     cursor = connection.cursor()
     create_tokens_table = """
     CREATE TABLE IF NOT EXISTS tokens (
-        token_id SERIAL PRIMARY KEY,  -- Unique identifier for each row
-        token_symbol TEXT NOT NULL,  -- Symbol/ticker name for the token
-        token_address TEXT NOT NULL,  -- Token's blockchain address
-        added_timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP  -- Time when the token was added
+        token_id SERIAL PRIMARY KEY,
+        token_address TEXT NOT NULL,
+        added_timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
     """
     try:
@@ -22,13 +34,13 @@ def create_tokens_table(connection):
     finally:
         cursor.close()
 
-# Financial Metrics Table
 def create_financial_metrics_table(connection):
     cursor = connection.cursor()
     create_financial_metrics_table = """
     CREATE TABLE IF NOT EXISTS financial_metrics (
         id SERIAL PRIMARY KEY,
         token_id INT,
+        token_symbol TEXT NOT NULL,
         timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         dex_id TEXT,
         price_usd FLOAT,
@@ -53,7 +65,6 @@ def create_financial_metrics_table(connection):
         liquidity_usd FLOAT,
         FOREIGN KEY (token_id) REFERENCES tokens(token_id)
     );
-
     """
     try:
         cursor.execute(create_financial_metrics_table)
@@ -64,7 +75,6 @@ def create_financial_metrics_table(connection):
     finally:
         cursor.close()
 
-# Static Info Table
 def create_static_info_table(connection):
     cursor = connection.cursor()
     create_static_info_table = """
@@ -74,9 +84,26 @@ def create_static_info_table(connection):
         twitter TEXT,
         telegram TEXT,
         website TEXT,
-        liqlock VARCHAR(10),
-        mutable VARCHAR(10),
-        topholder VARCHAR(10),
+        mint_authority TEXT,
+        freeze_authority TEXT,
+        is_immutable BOOLEAN,
+        risks TEXT,
+        score INT,
+        reserve_supply BIGINT,
+        current_supply BIGINT,
+        pct_reserve FLOAT,
+        pct_supply FLOAT,
+        total_tokens_unlocked BIGINT,
+        total_supply BIGINT,
+        lp_locked BIGINT,
+        lp_unlocked BIGINT,
+        lp_locked_pct FLOAT,
+        lp_locked_usd FLOAT,
+        lp_max_supply BIGINT,
+        lp_current_supply BIGINT,
+        lp_total_supply BIGINT,
+        rugged BOOLEAN,
+        top_holders BIGINT,
         FOREIGN KEY (token_id) REFERENCES tokens(token_id)
     );
     """
@@ -88,9 +115,30 @@ def create_static_info_table(connection):
         print(f"The error '{e}' occurred")
     finally:
         cursor.close()
-        
-# conn = connect_to_database()
-# if conn:
-#     create_tokens_table(conn)
-#     create_financial_metrics_table(conn)
-#     create_static_info_table(conn)
+
+def create_good_tokens_table(connection):
+    cursor = connection.cursor()
+    create_good_tokens_table = """
+    CREATE TABLE IF NOT EXISTS good_tokens (
+        token_id SERIAL PRIMARY KEY,
+        token_address TEXT NOT NULL,
+        added_timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+    """
+    try:
+        cursor.execute(create_good_tokens_table)
+        connection.commit()
+        print("Table 'good_tokens' created successfully")
+    except Error as e:
+        print(f"The error '{e}' occurred")
+    finally:
+        cursor.close()
+
+conn = connect_to_database()
+if conn:
+    drop_tables(conn)
+    create_tokens_table(conn)
+    create_financial_metrics_table(conn)
+    create_static_info_table(conn)
+    create_good_tokens_table(conn)
+    conn.close()
